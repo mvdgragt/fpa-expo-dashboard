@@ -1,35 +1,89 @@
-## Supabase migrations
+# fpa-expo-dashboard
 
-This repo contains SQL migrations under `supabase/migrations/`.
+Coach/Admin dashboard for FPA built with React + Vite + TypeScript and backed by Supabase.
 
-### 001_test_results.sql
+## Requirements
 
-1. Open your Supabase project.
-2. Go to **SQL Editor**.
-3. Paste the contents of `supabase/migrations/001_test_results.sql` and run it.
+- Node.js (LTS)
+- A Supabase project with the FPA schema (`clubs`, `club_users`, `club_staff`, etc.)
 
-### Verify
+## Setup
 
-- Table exists: `public.test_results`
-- RLS is enabled on `public.test_results`
-- Policies exist:
-  - `staff/admin can read club results`
-  - `staff/admin can insert club results`
+1. Install dependencies
 
-### Sanity check query
-
-After running the migration, you can run:
-
-```sql
-select count(*) from public.test_results;
+```bash
+npm install
 ```
 
-### Notes
+2. Configure env
 
-- Inserts are allowed for:
-  - admins (`is_admin_user() = true`)
-  - club staff with a `club_staff` row matching `auth.uid()` + `club_id`
-- The Expo app sync will insert rows with:
-  - `club_id` from the stored club session
-  - `user_id` from the selected athlete
-  - `time_seconds` numeric
+Copy `.env.example` to `.env` and set:
+
+```bash
+VITE_SUPABASE_URL=https://<project-ref>.supabase.co
+VITE_SUPABASE_ANON_KEY=<anon-public-jwt>
+```
+
+Notes:
+
+- `VITE_SUPABASE_ANON_KEY` must be the **anon public** key from Supabase **Project Settings → API**.
+- After changing `.env`, restart `npm run dev`.
+
+3. Run the dev server
+
+```bash
+npm run dev
+```
+
+Open:
+
+- http://localhost:5173
+
+## Supabase
+
+### Migrations
+
+Run SQL migrations from `supabase/migrations/` in Supabase **SQL Editor**.
+
+- `supabase/migrations/001_test_results.sql`
+  - creates `public.test_results`
+  - enables RLS
+  - adds select/insert policies for staff/admin
+
+See `supabase/README.md`.
+
+### Storage (athlete photos)
+
+The dashboard uploads athlete photos to Supabase Storage:
+
+- **Bucket**: `user-photos`
+- **Path**: `club_users/<clubId>/<userId>.jpg`
+- **Compression**: client-side JPEG compressed to **<= 65KB**
+
+`club_users.image_url` stores the object path, and the UI uses signed URLs to display the image.
+
+## Roles & permissions
+
+Auth role detection:
+
+- `admin`: Supabase RPC `is_admin_user()` returns `true`
+- `staff`: has a row in `public.club_staff` for `auth.uid()`
+
+RLS policies must allow relevant select/insert/update operations for these roles.
+
+## Features
+
+- Results table (filters: station/date range)
+- Benchmarks (sex/age filters + histogram + percentiles)
+- Leaderboard (top 3 per station, with filters)
+- Athletes list + athlete profile (history chart + best-per-station)
+- Create athlete (photo optional)
+- Update athlete (edit fields + optional photo replacement)
+
+## Admin club switching
+
+Admins can switch the active club in the header. The selection is stored in localStorage:
+
+- `fpa.activeClubId`
+
+All pages (Results/Benchmarks/Leaderboard/Athletes) use the active club context.
