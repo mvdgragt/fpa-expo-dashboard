@@ -16,6 +16,7 @@ import { getAthlete } from "../../lib/api/athletes";
 import { getAthletePhotoSignedUrl } from "../../lib/api/athletes";
 import { updateAthlete } from "../../lib/api/athletes";
 import { listAthleteResults } from "../../lib/api/athleteResults";
+import { listSportPositions, listSports } from "../../lib/api/sports";
 import { testStations } from "../../lib/testStations";
 import { useActiveClub } from "../../lib/useActiveClub";
 
@@ -321,6 +322,8 @@ const EditAthleteForm = ({
     last_name: string | null;
     dob: string | null;
     sex: string | null;
+    sport_id?: string | null;
+    position_id?: string | null;
   };
   onSaved: () => Promise<void>;
 }) => {
@@ -330,7 +333,28 @@ const EditAthleteForm = ({
   const [sex, setSex] = useState<"" | "M" | "F">(
     ((athlete.sex || "").toUpperCase() as "" | "M" | "F") || "",
   );
+  const [sportId, setSportId] = useState<string>(athlete.sport_id || "");
+  const [positionId, setPositionId] = useState<string>(
+    athlete.position_id || "",
+  );
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+
+  const sportsQuery = useQuery({
+    enabled: !!clubId,
+    queryKey: ["sports", { clubId }],
+    queryFn: () => listSports({ clubId }),
+  });
+
+  const positionsQuery = useQuery({
+    enabled: !!clubId && !!sportId,
+    queryKey: ["sport_positions", { clubId, sportId }],
+    queryFn: () => listSportPositions({ clubId, sportId }),
+  });
+
+  const positionsForSport = useMemo(
+    () => positionsQuery.data || [],
+    [positionsQuery.data],
+  );
 
   const updateMutation = useMutation({
     mutationFn: async () => {
@@ -347,6 +371,8 @@ const EditAthleteForm = ({
         lastName: lastName.trim(),
         dob: dob || undefined,
         sex: sex || undefined,
+        sportId: sportId || null,
+        positionId: positionId || null,
         photoFile: photoFile || undefined,
       });
     },
@@ -400,6 +426,52 @@ const EditAthleteForm = ({
             onChange={(e) => setDob(e.target.value)}
             className="h-10 w-full rounded-xl border border-slate-800 bg-slate-900 px-3 text-sm text-white"
           />
+        </label>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3">
+        <label className="block">
+          <div className="mb-1 text-xs font-medium text-slate-300">Sport</div>
+          <select
+            value={sportId}
+            onChange={(e) => {
+              const nextSportId = e.target.value;
+              setSportId(nextSportId);
+              setPositionId("");
+            }}
+            className="h-10 w-full rounded-xl border border-slate-800 bg-slate-900 px-3 text-sm text-white"
+          >
+            <option value="">—</option>
+            {(sportsQuery.data || []).map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="block">
+          <div className="mb-1 text-xs font-medium text-slate-300">
+            Position
+          </div>
+          <select
+            value={positionId}
+            onChange={(e) => setPositionId(e.target.value)}
+            disabled={!sportId}
+            className="h-10 w-full rounded-xl border border-slate-800 bg-slate-900 px-3 text-sm text-white disabled:opacity-50"
+          >
+            <option value="">—</option>
+            {positionsForSport.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          {sportId && positionsQuery.isLoading ? (
+            <div className="mt-2 text-xs text-slate-400">
+              Loading positions…
+            </div>
+          ) : null}
         </label>
       </div>
 

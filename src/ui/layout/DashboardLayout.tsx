@@ -4,6 +4,7 @@ import {
   Home,
   ListChecks,
   LogOut,
+  Settings,
   Trophy,
   Users,
 } from "lucide-react";
@@ -52,6 +53,11 @@ export const DashboardLayout = () => {
               to="/athletes"
               icon={<Users className="h-4 w-4" />}
               label="Athletes"
+            />
+            <NavItem
+              to="/sports"
+              icon={<Settings className="h-4 w-4" />}
+              label="Sports"
             />
 
             <button

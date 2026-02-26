@@ -12,6 +12,8 @@ export type ClubUser = {
   dob: string | null;
   sex: string | null;
   image_url: string | null;
+  sport_id?: string | null;
+  position_id?: string | null;
   created_at?: string | null;
 };
 
@@ -23,7 +25,9 @@ export const listAthletes = async (args: {
 
   const { data, error } = await supabase
     .from("club_users")
-    .select("id,club_id,first_name,last_name,dob,sex,image_url,created_at")
+    .select(
+      "id,club_id,first_name,last_name,dob,sex,image_url,sport_id,position_id,created_at",
+    )
     .eq("club_id", args.clubId)
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -38,7 +42,9 @@ export const getAthlete = async (args: {
 }): Promise<ClubUser | null> => {
   const { data, error } = await supabase
     .from("club_users")
-    .select("id,club_id,first_name,last_name,dob,sex,image_url,created_at")
+    .select(
+      "id,club_id,first_name,last_name,dob,sex,image_url,sport_id,position_id,created_at",
+    )
     .eq("club_id", args.clubId)
     .eq("id", args.userId)
     .maybeSingle();
@@ -69,12 +75,16 @@ export const createAthlete = async (args: {
     dob: args.dob || null,
     sex: args.sex || null,
     image_url: null,
+    sport_id: null,
+    position_id: null,
   };
 
   const { data: created, error: insertError } = await supabase
     .from("club_users")
     .insert(insertPayload)
-    .select("id,club_id,first_name,last_name,dob,sex,image_url,created_at")
+    .select(
+      "id,club_id,first_name,last_name,dob,sex,image_url,sport_id,position_id,created_at",
+    )
     .single();
 
   if (insertError) throw insertError;
@@ -103,7 +113,9 @@ export const createAthlete = async (args: {
     .update({ image_url: objectPath })
     .eq("id", id)
     .eq("club_id", args.clubId)
-    .select("id,club_id,first_name,last_name,dob,sex,image_url,created_at")
+    .select(
+      "id,club_id,first_name,last_name,dob,sex,image_url,sport_id,position_id,created_at",
+    )
     .single();
 
   if (updateError) throw updateError;
@@ -131,6 +143,8 @@ export const updateAthlete = async (args: {
   lastName?: string;
   dob?: string;
   sex?: string;
+  sportId?: string | null;
+  positionId?: string | null;
   photoFile?: File | null;
 }): Promise<ClubUser> => {
   const patch: Record<string, unknown> = {};
@@ -138,6 +152,8 @@ export const updateAthlete = async (args: {
   if (args.lastName !== undefined) patch.last_name = args.lastName || null;
   if (args.dob !== undefined) patch.dob = args.dob || null;
   if (args.sex !== undefined) patch.sex = args.sex || null;
+  if (args.sportId !== undefined) patch.sport_id = args.sportId;
+  if (args.positionId !== undefined) patch.position_id = args.positionId;
 
   if (Object.keys(patch).length > 0) {
     const { error } = await supabase
@@ -175,7 +191,9 @@ export const updateAthlete = async (args: {
 
   const { data, error } = await supabase
     .from("club_users")
-    .select("id,club_id,first_name,last_name,dob,sex,image_url,created_at")
+    .select(
+      "id,club_id,first_name,last_name,dob,sex,image_url,sport_id,position_id,created_at",
+    )
     .eq("club_id", args.clubId)
     .eq("id", args.userId)
     .single();
