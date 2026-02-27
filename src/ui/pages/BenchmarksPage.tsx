@@ -16,6 +16,15 @@ import { listBenchmarkSamples } from "../../lib/api/benchmarks";
 import { testStations } from "../../lib/testStations";
 import { useActiveClub } from "../../lib/useActiveClub";
 
+import { pdf } from "@react-pdf/renderer";
+
+import {
+  buildCoachReport505,
+  type BenchmarkSample505,
+  type Foot,
+} from "../../lib/reports/coachReport505";
+import { CoachReport505Pdf } from "../reports/CoachReport505Pdf";
+
 type SexFilter = "all" | "M" | "F";
 
 const toAgeYears = (dobIso: string, atIso: string) => {
@@ -84,6 +93,7 @@ export const BenchmarksPage = () => {
   const [sex, setSex] = useState<SexFilter>("all");
   const [minAge, setMinAge] = useState<string>("");
   const [maxAge, setMaxAge] = useState<string>("");
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const activeClub = useActiveClub();
   const clubId = activeClub.clubId;
@@ -139,6 +149,61 @@ export const BenchmarksPage = () => {
 
   const station = testStations.find((s) => s.id === stationId);
 
+  const clubName = useMemo(() => {
+    const found = activeClub.clubs.find((c) => c.id === clubId);
+    return found?.name || "";
+  }, [activeClub.clubs, clubId]);
+
+  const canGenerateCoachReport =
+    stationId === "5-0-5-test" && !!clubId && !activeClub.isLoading;
+
+  const normalizeFoot = (foot: string | null): Foot | null => {
+    if (!foot) return null;
+    const f = foot.toLowerCase();
+    if (f === "left" || f === "right") return f;
+    return null;
+  };
+
+  const handleGenerateCoachReport = async () => {
+    if (!canGenerateCoachReport) return;
+    if (isGeneratingPdf) return;
+
+    try {
+      setIsGeneratingPdf(true);
+
+      const samples505: BenchmarkSample505[] = (filtered || []).map((s) => ({
+        user_id: s.user_id,
+        time_seconds: s.time_seconds,
+        tested_at: s.tested_at,
+        foot: normalizeFoot(s.foot),
+        user: s.user,
+      }));
+
+      const report = buildCoachReport505({ samples: samples505 });
+
+      const blob = await pdf(
+        <CoachReport505Pdf
+          clubName={clubName || "Club"}
+          report={report}
+          filters={{ sex, minAge, maxAge }}
+        />,
+      ).toBlob();
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `coach-report-505-${clubName || clubId}-${new Date()
+        .toISOString()
+        .slice(0, 10)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-slate-800 bg-slate-950 p-6">
@@ -155,6 +220,26 @@ export const BenchmarksPage = () => {
                 Club ID: <span className="font-mono">{clubId}</span>
               </div>
             ) : null}
+
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={handleGenerateCoachReport}
+                disabled={
+                  !canGenerateCoachReport ||
+                  isGeneratingPdf ||
+                  samplesQuery.isLoading ||
+                  filtered.length === 0
+                }
+                className="inline-flex h-10 items-center rounded-xl border border-slate-800 bg-slate-900 px-4 text-sm font-semibold text-white disabled:opacity-40"
+              >
+                {isGeneratingPdf
+                  ? "Generating Coach Report…"
+                  : stationId === "5-0-5-test"
+                    ? "Generate Coach Report (PDF)"
+                    : "Coach Report available for 5-0-5 only"}
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-2 md:grid-cols-4">

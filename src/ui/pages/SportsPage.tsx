@@ -11,6 +11,30 @@ import {
 } from "../../lib/api/sports";
 import { useActiveClub } from "../../lib/useActiveClub";
 
+const getErrorMessage = (err: unknown) => {
+  if (!err) return "";
+  if (typeof err === "string") return err;
+  if (err instanceof Error) return err.message;
+  if (typeof err === "object") {
+    const maybe = err as {
+      message?: unknown;
+      details?: unknown;
+      hint?: unknown;
+    };
+    if (typeof maybe.message === "string" && maybe.message.trim())
+      return maybe.message;
+    if (typeof maybe.details === "string" && maybe.details.trim())
+      return maybe.details;
+    if (typeof maybe.hint === "string" && maybe.hint.trim()) return maybe.hint;
+    try {
+      return JSON.stringify(err);
+    } catch {
+      return String(err);
+    }
+  }
+  return String(err);
+};
+
 export const SportsPage = () => {
   const qc = useQueryClient();
   const activeClub = useActiveClub();
@@ -28,15 +52,22 @@ export const SportsPage = () => {
 
   const effectiveSelectedSportId = useMemo(() => {
     const rows = sportsQuery.data || [];
-    if (selectedSportId && rows.some((s) => s.id === selectedSportId)) return selectedSportId;
+    if (selectedSportId && rows.some((s) => s.id === selectedSportId))
+      return selectedSportId;
     return rows[0]?.id || "";
   }, [selectedSportId, sportsQuery.data]);
 
   const positionsQuery = useQuery({
     enabled: !!clubId && !!effectiveSelectedSportId,
-    queryKey: ["sport_positions", { clubId, sportId: effectiveSelectedSportId }],
+    queryKey: [
+      "sport_positions",
+      { clubId, sportId: effectiveSelectedSportId },
+    ],
     queryFn: () =>
-      listSportPositions({ clubId: clubId || "", sportId: effectiveSelectedSportId }),
+      listSportPositions({
+        clubId: clubId || "",
+        sportId: effectiveSelectedSportId,
+      }),
   });
 
   const createSportMutation = useMutation({
@@ -59,7 +90,11 @@ export const SportsPage = () => {
       if (!effectiveSelectedSportId) throw new Error("Select a sport first");
       const name = positionName.trim();
       if (!name) throw new Error("Position name is required");
-      return createSportPosition({ clubId, sportId: effectiveSelectedSportId, name });
+      return createSportPosition({
+        clubId,
+        sportId: effectiveSelectedSportId,
+        name,
+      });
     },
     onSuccess: async () => {
       setPositionName("");
@@ -72,13 +107,16 @@ export const SportsPage = () => {
       <div className="rounded-2xl border border-slate-800 bg-slate-950 p-6">
         <div className="text-sm font-semibold text-slate-100">Sports</div>
         <div className="mt-1 text-sm text-slate-400">
-          Create sports and positions per club. Nothing is deleted by this screen.
+          Create sports and positions per club. Nothing is deleted by this
+          screen.
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-2xl border border-slate-800 bg-slate-950 p-6">
-          <div className="text-sm font-semibold text-slate-100">Create sport</div>
+          <div className="text-sm font-semibold text-slate-100">
+            Create sport
+          </div>
 
           <div className="mt-4 flex gap-2">
             <input
@@ -89,7 +127,9 @@ export const SportsPage = () => {
             />
             <button
               type="button"
-              disabled={!clubId || createSportMutation.isPending || !sportName.trim()}
+              disabled={
+                !clubId || createSportMutation.isPending || !sportName.trim()
+              }
               onClick={() => createSportMutation.mutate()}
               className="h-10 rounded-xl border border-slate-700 bg-slate-900 px-4 text-sm font-semibold text-slate-100 disabled:opacity-50"
             >
@@ -99,22 +139,28 @@ export const SportsPage = () => {
 
           {createSportMutation.error ? (
             <div className="mt-3 text-xs text-rose-300">
-              {createSportMutation.error instanceof Error
-                ? createSportMutation.error.message
-                : String(createSportMutation.error)}
+              {getErrorMessage(createSportMutation.error)}
             </div>
           ) : null}
 
           <div className="mt-6">
-            <div className="text-xs font-medium text-slate-300">Sports list</div>
+            <div className="text-xs font-medium text-slate-300">
+              Sports list
+            </div>
             {activeClub.isLoading || sportsQuery.isLoading ? (
               <div className="mt-3 text-sm text-slate-300">Loading…</div>
             ) : activeClub.error ? (
-              <div className="mt-3 text-sm text-rose-300">{activeClub.error}</div>
+              <div className="mt-3 text-sm text-rose-300">
+                {getErrorMessage(activeClub.error)}
+              </div>
             ) : !clubId ? (
-              <div className="mt-3 text-sm text-rose-300">No club selected.</div>
+              <div className="mt-3 text-sm text-rose-300">
+                No club selected.
+              </div>
             ) : sportsQuery.error ? (
-              <div className="mt-3 text-sm text-rose-300">Could not load sports.</div>
+              <div className="mt-3 text-sm text-rose-300">
+                Could not load sports.
+              </div>
             ) : (sportsQuery.data || []).length === 0 ? (
               <div className="mt-3 text-sm text-slate-300">No sports yet.</div>
             ) : (
@@ -148,7 +194,9 @@ export const SportsPage = () => {
 
           <div className="mt-4 grid grid-cols-1 gap-2">
             <label className="block">
-              <div className="mb-1 text-xs font-medium text-slate-300">Sport</div>
+              <div className="mb-1 text-xs font-medium text-slate-300">
+                Sport
+              </div>
               <select
                 value={effectiveSelectedSportId}
                 onChange={(e) => setSelectedSportId(e.target.value)}
@@ -186,20 +234,24 @@ export const SportsPage = () => {
 
             {createPositionMutation.error ? (
               <div className="text-xs text-rose-300">
-                {createPositionMutation.error instanceof Error
-                  ? createPositionMutation.error.message
-                  : String(createPositionMutation.error)}
+                {getErrorMessage(createPositionMutation.error)}
               </div>
             ) : null}
 
             <div className="mt-4">
-              <div className="text-xs font-medium text-slate-300">Positions list</div>
+              <div className="text-xs font-medium text-slate-300">
+                Positions list
+              </div>
               {positionsQuery.isLoading ? (
                 <div className="mt-3 text-sm text-slate-300">Loading…</div>
               ) : positionsQuery.error ? (
-                <div className="mt-3 text-sm text-rose-300">Could not load positions.</div>
+                <div className="mt-3 text-sm text-rose-300">
+                  Could not load positions.
+                </div>
               ) : (positionsQuery.data || []).length === 0 ? (
-                <div className="mt-3 text-sm text-slate-300">No positions yet.</div>
+                <div className="mt-3 text-sm text-slate-300">
+                  No positions yet.
+                </div>
               ) : (
                 <div className="mt-3 space-y-2">
                   {(positionsQuery.data || []).map((p) => (
@@ -208,7 +260,9 @@ export const SportsPage = () => {
                       className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-slate-200"
                     >
                       <span>{p.name}</span>
-                      <span className="text-xs text-slate-500">{p.id.slice(0, 8)}…</span>
+                      <span className="text-xs text-slate-500">
+                        {p.id.slice(0, 8)}…
+                      </span>
                     </div>
                   ))}
                 </div>

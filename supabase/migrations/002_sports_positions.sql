@@ -12,53 +12,89 @@ create index if not exists sports_club_id_idx on public.sports (club_id);
 
 alter table public.sports enable row level security;
 
-create policy "staff/admin can read club sports"
-on public.sports
-for select
-using (
-  public.is_admin_user()
-  or exists (
-    select 1
-    from public.club_staff cs
-    where cs.user_id = auth.uid()
-      and cs.club_id = sports.club_id
-  )
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'sports'
+      AND policyname = 'staff/admin can read club sports'
+  ) THEN
+    create policy "staff/admin can read club sports"
+    on public.sports
+    for select
+    using (
+      public.is_admin_user()
+      or exists (
+        select 1
+        from public.club_staff cs
+        where cs.user_id = auth.uid()
+          and cs.club_id = sports.club_id
+      )
+    );
+  END IF;
+END
+$$;
 
-create policy "staff/admin can insert club sports"
-on public.sports
-for insert
-with check (
-  public.is_admin_user()
-  or exists (
-    select 1
-    from public.club_staff cs
-    where cs.user_id = auth.uid()
-      and cs.club_id = sports.club_id
-  )
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'sports'
+      AND policyname = 'staff/admin can insert club sports'
+  ) THEN
+    create policy "staff/admin can insert club sports"
+    on public.sports
+    for insert
+    with check (
+      public.is_admin_user()
+      or exists (
+        select 1
+        from public.club_staff cs
+        where cs.user_id = auth.uid()
+          and cs.club_id = sports.club_id
+      )
+    );
+  END IF;
+END
+$$;
 
-create policy "staff/admin can update club sports"
-on public.sports
-for update
-using (
-  public.is_admin_user()
-  or exists (
-    select 1
-    from public.club_staff cs
-    where cs.user_id = auth.uid()
-      and cs.club_id = sports.club_id
-  )
-)
-with check (
-  public.is_admin_user()
-  or exists (
-    select 1
-    from public.club_staff cs
-    where cs.user_id = auth.uid()
-      and cs.club_id = sports.club_id
-  )
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'sports'
+      AND policyname = 'staff/admin can update club sports'
+  ) THEN
+    create policy "staff/admin can update club sports"
+    on public.sports
+    for update
+    using (
+      public.is_admin_user()
+      or exists (
+        select 1
+        from public.club_staff cs
+        where cs.user_id = auth.uid()
+          and cs.club_id = sports.club_id
+      )
+    )
+    with check (
+      public.is_admin_user()
+      or exists (
+        select 1
+        from public.club_staff cs
+        where cs.user_id = auth.uid()
+          and cs.club_id = sports.club_id
+      )
+    );
+  END IF;
+END
+$$;
 
 create table if not exists public.sport_positions (
   id uuid primary key default gen_random_uuid(),
@@ -74,53 +110,89 @@ create index if not exists sport_positions_sport_id_idx on public.sport_position
 
 alter table public.sport_positions enable row level security;
 
-create policy "staff/admin can read club sport positions"
-on public.sport_positions
-for select
-using (
-  public.is_admin_user()
-  or exists (
-    select 1
-    from public.club_staff cs
-    where cs.user_id = auth.uid()
-      and cs.club_id = sport_positions.club_id
-  )
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'sport_positions'
+      AND policyname = 'staff/admin can read club sport positions'
+  ) THEN
+    create policy "staff/admin can read club sport positions"
+    on public.sport_positions
+    for select
+    using (
+      public.is_admin_user()
+      or exists (
+        select 1
+        from public.club_staff cs
+        where cs.user_id = auth.uid()
+          and cs.club_id = sport_positions.club_id
+      )
+    );
+  END IF;
+END
+$$;
 
-create policy "staff/admin can insert club sport positions"
-on public.sport_positions
-for insert
-with check (
-  public.is_admin_user()
-  or exists (
-    select 1
-    from public.club_staff cs
-    where cs.user_id = auth.uid()
-      and cs.club_id = sport_positions.club_id
-  )
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'sport_positions'
+      AND policyname = 'staff/admin can insert club sport positions'
+  ) THEN
+    create policy "staff/admin can insert club sport positions"
+    on public.sport_positions
+    for insert
+    with check (
+      public.is_admin_user()
+      or exists (
+        select 1
+        from public.club_staff cs
+        where cs.user_id = auth.uid()
+          and cs.club_id = sport_positions.club_id
+      )
+    );
+  END IF;
+END
+$$;
 
-create policy "staff/admin can update club sport positions"
-on public.sport_positions
-for update
-using (
-  public.is_admin_user()
-  or exists (
-    select 1
-    from public.club_staff cs
-    where cs.user_id = auth.uid()
-      and cs.club_id = sport_positions.club_id
-  )
-)
-with check (
-  public.is_admin_user()
-  or exists (
-    select 1
-    from public.club_staff cs
-    where cs.user_id = auth.uid()
-      and cs.club_id = sport_positions.club_id
-  )
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'sport_positions'
+      AND policyname = 'staff/admin can update club sport positions'
+  ) THEN
+    create policy "staff/admin can update club sport positions"
+    on public.sport_positions
+    for update
+    using (
+      public.is_admin_user()
+      or exists (
+        select 1
+        from public.club_staff cs
+        where cs.user_id = auth.uid()
+          and cs.club_id = sport_positions.club_id
+      )
+    )
+    with check (
+      public.is_admin_user()
+      or exists (
+        select 1
+        from public.club_staff cs
+        where cs.user_id = auth.uid()
+          and cs.club_id = sport_positions.club_id
+      )
+    );
+  END IF;
+END
+$$;
 
 alter table public.club_users
   add column if not exists sport_id uuid null references public.sports(id) on delete set null;

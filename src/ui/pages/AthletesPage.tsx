@@ -6,6 +6,30 @@ import { Link } from "react-router-dom";
 import { createAthlete, listAthletes } from "../../lib/api/athletes";
 import { useActiveClub } from "../../lib/useActiveClub";
 
+const getErrorMessage = (err: unknown) => {
+  if (!err) return "";
+  if (typeof err === "string") return err;
+  if (err instanceof Error) return err.message;
+  if (typeof err === "object") {
+    const maybe = err as {
+      message?: unknown;
+      details?: unknown;
+      hint?: unknown;
+    };
+    if (typeof maybe.message === "string" && maybe.message.trim())
+      return maybe.message;
+    if (typeof maybe.details === "string" && maybe.details.trim())
+      return maybe.details;
+    if (typeof maybe.hint === "string" && maybe.hint.trim()) return maybe.hint;
+    try {
+      return JSON.stringify(err);
+    } catch {
+      return String(err);
+    }
+  }
+  return String(err);
+};
+
 export const AthletesPage = () => {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
@@ -168,9 +192,7 @@ export const AthletesPage = () => {
 
           {createMutation.error ? (
             <div className="mt-3 text-xs text-rose-300">
-              {createMutation.error instanceof Error
-                ? createMutation.error.message
-                : String(createMutation.error)}
+              {getErrorMessage(createMutation.error)}
             </div>
           ) : null}
         </div>
