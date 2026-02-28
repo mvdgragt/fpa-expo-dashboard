@@ -9,6 +9,8 @@ export type TestResultRow = {
   station_short_name: string;
   time_seconds: number;
   tested_at: string;
+  foot?: string | null;
+  device_id?: string | null;
 };
 
 export type ResultWithUser = TestResultRow & {
@@ -54,6 +56,8 @@ export const listResults = async (args: {
         "station_short_name",
         "time_seconds",
         "tested_at",
+        "foot",
+        "device_id",
         "club_users:club_users(id,first_name,last_name,sex,dob,image_url)",
       ].join(","),
     )
@@ -75,4 +79,83 @@ export const listResults = async (args: {
     const user = club_users || undefined;
     return { ...(rest as TestResultRow), user } as ResultWithUser;
   });
+};
+
+export const updateResult = async (args: {
+  clubId: string;
+  resultId: string;
+  timeSeconds?: number;
+  foot?: string | null;
+  testedAtIso?: string;
+}) => {
+  const patch: Record<string, unknown> = {};
+  if (args.timeSeconds !== undefined) patch.time_seconds = args.timeSeconds;
+  if (args.foot !== undefined) patch.foot = args.foot;
+  if (args.testedAtIso !== undefined) patch.tested_at = args.testedAtIso;
+
+  const { error } = await supabase
+    .from("test_results")
+    .update(patch)
+    .eq("club_id", args.clubId)
+    .eq("id", args.resultId);
+
+  if (error) throw error;
+};
+
+export const insertResult = async (args: {
+  clubId: string;
+  userId: string;
+  stationId: string;
+  stationName: string;
+  stationShortName: string;
+  timeSeconds: number;
+  testedAtIso: string;
+  foot?: string | null;
+}) => {
+  const payload = {
+    club_id: args.clubId,
+    user_id: args.userId,
+    station_id: args.stationId,
+    station_name: args.stationName,
+    station_short_name: args.stationShortName,
+    time_seconds: args.timeSeconds,
+    tested_at: args.testedAtIso,
+    foot: args.foot ?? null,
+  };
+
+  const { data, error } = await supabase
+    .from("test_results")
+    .insert(payload)
+    .select("id")
+    .single();
+
+  if (error) throw error;
+  return data as { id: string };
+};
+
+export const deleteResult = async (args: {
+  clubId: string;
+  resultId: string;
+}) => {
+  const { error } = await supabase
+    .from("test_results")
+    .delete()
+    .eq("club_id", args.clubId)
+    .eq("id", args.resultId);
+
+  if (error) throw error;
+};
+
+export const deleteResultsByIds = async (args: {
+  clubId: string;
+  resultIds: string[];
+}) => {
+  if (args.resultIds.length === 0) return;
+  const { error } = await supabase
+    .from("test_results")
+    .delete()
+    .eq("club_id", args.clubId)
+    .in("id", args.resultIds);
+
+  if (error) throw error;
 };
