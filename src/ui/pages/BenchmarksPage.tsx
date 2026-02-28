@@ -93,6 +93,7 @@ export const BenchmarksPage = () => {
   const [sex, setSex] = useState<SexFilter>("all");
   const [minAge, setMinAge] = useState<string>("");
   const [maxAge, setMaxAge] = useState<string>("");
+  const [reportLanguage, setReportLanguage] = useState<"en" | "sv">("en");
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const activeClub = useActiveClub();
@@ -179,12 +180,17 @@ export const BenchmarksPage = () => {
         user: s.user,
       }));
 
-      const report = buildCoachReport505({ samples: samples505 });
+      const report = buildCoachReport505({
+        samples: samples505,
+        language: reportLanguage,
+      });
 
       const blob = await pdf(
         <CoachReport505Pdf
           clubName={clubName || "Club"}
           report={report}
+          stationName="5-0-5"
+          language={reportLanguage}
           filters={{ sex, minAge, maxAge }}
         />,
       ).toBlob();
@@ -242,7 +248,7 @@ export const BenchmarksPage = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-5">
             <label className="block">
               <div className="mb-1 text-xs font-medium text-slate-300">
                 Station
@@ -270,6 +276,22 @@ export const BenchmarksPage = () => {
                 <option value="all">All</option>
                 <option value="M">Male</option>
                 <option value="F">Female</option>
+              </select>
+            </label>
+
+            <label className="block">
+              <div className="mb-1 text-xs font-medium text-slate-300">
+                Language
+              </div>
+              <select
+                value={reportLanguage}
+                onChange={(e) =>
+                  setReportLanguage(e.target.value as "en" | "sv")
+                }
+                className="h-10 w-full rounded-xl border border-slate-800 bg-slate-900 px-3 text-sm text-white"
+              >
+                <option value="en">English</option>
+                <option value="sv">Svenska</option>
               </select>
             </label>
 

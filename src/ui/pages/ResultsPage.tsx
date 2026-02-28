@@ -35,6 +35,8 @@ export const ResultsPage = () => {
   >("tested_desc");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTime, setEditTime] = useState("");
 
   const activeClub = useActiveClub();
   const clubId = activeClub.clubId;
@@ -518,9 +520,11 @@ export const ResultsPage = () => {
                         <button
                           type="button"
                           disabled={deleteMutation.isPending}
-                          onClick={() =>
-                            deleteMutation.mutate({ resultId: r.id })
-                          }
+                          onClick={() => {
+                            const ok = window.confirm("Delete this result?");
+                            if (!ok) return;
+                            deleteMutation.mutate({ resultId: r.id });
+                          }}
                           className="inline-flex h-9 items-center rounded-xl border border-slate-800 bg-slate-900 px-3 text-xs font-semibold text-rose-200 disabled:opacity-50"
                         >
                           Delete
@@ -553,9 +557,16 @@ export const ResultsPage = () => {
                   <button
                     type="button"
                     disabled={cleanupMutation.isPending}
-                    onClick={() =>
-                      cleanupMutation.mutate({ resultIds: invalidFastIds })
-                    }
+                    onClick={() => {
+                      if (invalidFastIds.length === 0) return;
+                      const ok = window.confirm(
+                        `Delete ${invalidFastIds.length} invalid 5-0-5 result${
+                          invalidFastIds.length === 1 ? "" : "s"
+                        }?`,
+                      );
+                      if (!ok) return;
+                      cleanupMutation.mutate({ resultIds: invalidFastIds });
+                    }}
                     className="inline-flex h-9 items-center rounded-xl border border-amber-900/50 bg-amber-900/20 px-3 text-xs font-semibold text-amber-100 disabled:opacity-50"
                   >
                     {cleanupMutation.isPending
@@ -683,9 +694,13 @@ export const ResultsPage = () => {
                               <button
                                 type="button"
                                 disabled={deleteMutation.isPending}
-                                onClick={() =>
-                                  deleteMutation.mutate({ resultId: left.id })
-                                }
+                                onClick={() => {
+                                  const ok = window.confirm(
+                                    "Delete this LEFT 5-0-5 result?",
+                                  );
+                                  if (!ok) return;
+                                  deleteMutation.mutate({ resultId: left.id });
+                                }}
                                 className="h-9 rounded-xl border border-slate-800 bg-slate-900 px-3 text-xs font-semibold text-rose-200 disabled:opacity-50"
                               >
                                 Delete
@@ -759,9 +774,15 @@ export const ResultsPage = () => {
                               <button
                                 type="button"
                                 disabled={deleteMutation.isPending}
-                                onClick={() =>
-                                  deleteMutation.mutate({ resultId: right.id })
-                                }
+                                onClick={() => {
+                                  const ok = window.confirm(
+                                    "Delete this RIGHT 5-0-5 result?",
+                                  );
+                                  if (!ok) return;
+                                  deleteMutation.mutate({
+                                    resultId: right.id,
+                                  });
+                                }}
                                 className="h-9 rounded-xl border border-slate-800 bg-slate-900 px-3 text-xs font-semibold text-rose-200 disabled:opacity-50"
                               >
                                 Delete
@@ -801,6 +822,13 @@ export const ResultsPage = () => {
                         </td>
                         <td className="px-4 py-3 text-slate-400">
                           <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setAthleteId(row.user_id)}
+                              className="h-9 rounded-xl border border-blue-800 bg-blue-900/30 px-3 text-xs font-semibold text-blue-300 hover:bg-blue-900/60"
+                            >
+                              Edit
+                            </button>
                             <button
                               type="button"
                               disabled={insertMutation.isPending}
@@ -863,7 +891,17 @@ export const ResultsPage = () => {
                       {r.station_short_name}
                     </td>
                     <td className="px-4 py-3 font-semibold text-emerald-300">
-                      {Number(r.time_seconds).toFixed(2)}s
+                      {editingId === r.id ? (
+                        <input
+                          autoFocus
+                          value={editTime}
+                          onChange={(e) => setEditTime(e.target.value)}
+                          inputMode="decimal"
+                          className="h-9 w-24 rounded-xl border border-blue-700 bg-slate-900 px-2 text-right text-sm text-white"
+                        />
+                      ) : (
+                        <>{Number(r.time_seconds).toFixed(2)}s</>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-slate-300">
                       {r.station_id === "5-0-5-test" ? (
@@ -889,16 +927,64 @@ export const ResultsPage = () => {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        type="button"
-                        disabled={deleteMutation.isPending}
-                        onClick={() =>
-                          deleteMutation.mutate({ resultId: r.id })
-                        }
-                        className="inline-flex h-9 items-center rounded-xl border border-slate-800 bg-slate-900 px-3 text-xs font-semibold text-rose-200 disabled:opacity-50"
-                      >
-                        Delete
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {editingId === r.id ? (
+                          <>
+                            <button
+                              type="button"
+                              disabled={updateMutation.isPending}
+                              onClick={() => {
+                                const v = Number(editTime);
+                                if (!Number.isFinite(v) || v <= 0) {
+                                  setEditingId(null);
+                                  return;
+                                }
+                                updateMutation.mutate(
+                                  { resultId: r.id, timeSeconds: v },
+                                  { onSuccess: () => setEditingId(null) },
+                                );
+                              }}
+                              className="inline-flex h-9 items-center rounded-xl border border-blue-700 bg-blue-900/30 px-3 text-xs font-semibold text-blue-200 disabled:opacity-50"
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingId(null)}
+                              className="inline-flex h-9 items-center rounded-xl border border-slate-700 bg-slate-900 px-3 text-xs font-semibold text-slate-300"
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingId(r.id);
+                                setEditTime(Number(r.time_seconds).toFixed(2));
+                              }}
+                              className="inline-flex h-9 items-center rounded-xl border border-blue-800 bg-blue-900/30 px-3 text-xs font-semibold text-blue-300 hover:bg-blue-900/60"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              disabled={deleteMutation.isPending}
+                              onClick={() => {
+                                const ok = window.confirm(
+                                  "Delete this result?",
+                                );
+                                if (!ok) return;
+                                deleteMutation.mutate({ resultId: r.id });
+                              }}
+                              className="inline-flex h-9 items-center rounded-xl border border-slate-800 bg-slate-900 px-3 text-xs font-semibold text-rose-200 disabled:opacity-50"
+                            >
+                              Delete
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

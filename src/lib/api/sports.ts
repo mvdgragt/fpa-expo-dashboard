@@ -15,7 +15,9 @@ export type SportPosition = {
   created_at?: string | null;
 };
 
-export const listSports = async (args: { clubId: string }): Promise<Sport[]> => {
+export const listSports = async (args: {
+  clubId: string;
+}): Promise<Sport[]> => {
   const { data, error } = await supabase
     .from("sports")
     .select("id,club_id,name,created_at")
