@@ -4,6 +4,7 @@ import {
   Home,
   ListChecks,
   LogOut,
+  Shield,
   Settings,
   Trophy,
   Users,
@@ -59,6 +60,14 @@ export const DashboardLayout = () => {
               icon={<Settings className="h-4 w-4" />}
               label="Sports"
             />
+
+            {activeClub.isAdmin ? (
+              <NavItem
+                to="/admins"
+                icon={<Shield className="h-4 w-4" />}
+                label="Admins"
+              />
+            ) : null}
 
             <button
               type="button"

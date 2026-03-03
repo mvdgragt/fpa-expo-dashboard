@@ -11,6 +11,7 @@ import { LeaderboardPage } from "../ui/pages/LeaderboardPage";
 import { AthletesPage } from "../ui/pages/AthletesPage";
 import { AthleteProfilePage } from "../ui/pages/AthleteProfilePage";
 import { SportsPage } from "../ui/pages/SportsPage";
+import { AdminsPage } from "../ui/pages/AdminsPage";
 
 const router = createBrowserRouter([
   {
@@ -34,6 +35,7 @@ const router = createBrowserRouter([
           { path: "/athletes", element: <AthletesPage /> },
           { path: "/athletes/:userId", element: <AthleteProfilePage /> },
           { path: "/sports", element: <SportsPage /> },
+          { path: "/admins", element: <AdminsPage /> },
         ],
       },
     ],
